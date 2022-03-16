@@ -2,9 +2,10 @@ import React, { useEffect, useState, useRef } from 'react'
 import { Socket } from 'socket.io-client'
 
 import './App.css';
-import { MessageBody , Message } from '../../global/schema'
+import { MessageBody, MessageType } from '../../global/schema'
+import Message from './components/Message/component'
 
-function configureMessage(from: string, to: string, args: MessageBody): Message {
+function configureMessage(from: string, to: string, args: MessageBody): MessageType {
   return {
     from,
     to,
@@ -20,7 +21,7 @@ type Props = {
 
 function App(props: Props) {
   const socket = props.socket
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<MessageType[]>([])
   const [id, setId] = useState<string | null>(null)
 
   const recipientRef = useRef<HTMLInputElement>(null)
@@ -46,6 +47,7 @@ function App(props: Props) {
       const value = messageRef.current?.value
       if (recipientId && value) {
         socket.emit('private message', configureMessage(socket.id, recipientId, {value}))
+        messageRef.current.value = ''
       }
     }
   }
@@ -53,17 +55,24 @@ function App(props: Props) {
   return (
     <div className="App">
       <label>Me: {id || 'waiting for socket id'}</label>
-      <br />
       <label>Recipient Id:</label>
       <input ref={recipientRef} type='text' />
-      <br />
-      <label>Message content:</label>
-      <input ref={messageRef} type='text' />
-      <br />
-      <button onClick={sendMessage}>Send a message</button>
-      {messages.map((msg, i) => {
-        return <p key={i}>{msg.from === id ? `to: ${msg.to}` : `from: ${msg.from}`}, message: {msg.body.value}</p>
-      })}
+      
+      <div className='message-container'>
+        {messages.map((msg, i) => {
+          if (id != null) {
+            return <Message 
+              id={id}
+              message={msg}
+            />
+          }
+          return <></>
+        })}
+      </div>
+      <div className='message-input'>
+        <input ref={messageRef} type='text' className='text' placeholder='Send a message...' />
+        <button onClick={sendMessage}>Send a message</button>
+      </div>
     </div>
   );
 }

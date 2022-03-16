@@ -1,0 +1,14 @@
+.message {
+    max-width: 50%;
+    align-self: end;
+    border-radius: 10px;
+    padding: 5px;
+    margin: 5px;
+    background-color: lightskyblue;
+    overflow-wrap: break-word;
+}
+
+.message.foreign {
+    align-self: start;
+    background-color: lightgrey;
+}
