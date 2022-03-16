@@ -3,7 +3,7 @@
  * This file will not exist at runtime, so make sure nothing in here is needed then
  */
 
-export type Message = {
+export type MessageType = {
   from: string
   to: string
   body: MessageBody
