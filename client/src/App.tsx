@@ -2,16 +2,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { Socket } from 'socket.io-client'
 
 import './App.css';
-
-type Message = {
-  from: string
-  to: string
-  body: MessageBody
-}
-
-type MessageBody = {
-  value: string
-}
+import { MessageBody , Message } from '../../global/schema'
 
 function configureMessage(from: string, to: string, args: MessageBody): Message {
   return {

@@ -3,20 +3,12 @@ import 'dotenv/config'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
 
+import { Message } from '../../global/schema'
+
 const port = process.env.PORT
 const app = express()
 const httpServer = createServer(app)
 const io = new Server(httpServer, {cors: {origin: '*'}})
-
-type Message = {
-  from: string
-  to: string
-  body: MessageBody
-}
-
-type MessageBody = {
-  value: string
-}
 
 io.on('connection', (socket) => {
   console.log(socket.id)
