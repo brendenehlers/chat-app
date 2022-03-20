@@ -12,3 +12,9 @@ export type MessageType = {
 export type MessageBody = {
   value: string
 }
+
+export type UsernameType = {
+  username: string
+  id: string
+  success?: boolean // sent to the callback
+}

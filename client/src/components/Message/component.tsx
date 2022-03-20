@@ -4,15 +4,15 @@ import './styles.css'
 import {MessageType} from '../../../../global/schema'
 
 type Props = {
-    id: string
+    username: string
     message: MessageType
 }
 
 function Message(props: Props) {
-    const {message, id} = props
+    const {message, username} = props
     return (
         <div
-            className={`message ${message.to === id ? 'foreign' : ''} `}
+            className={`message ${message.to === username ? 'foreign' : ''} `}
         >
             <div className='message-body'>
                 {message.body.value}

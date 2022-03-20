@@ -17,7 +17,7 @@
 
 .message-input {
   padding: 5px;
-  border: red solid 1px;
+  /* border: red solid 1px; */
   display: flex;
   flex-direction: row;
   align-items: stretch;
