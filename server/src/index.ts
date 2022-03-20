@@ -8,12 +8,12 @@ import cors from 'cors'
 import { MessageType, UsernameType } from '../../global/schema'
 
 // constants
-const http_port = process.env.HTTP_PORT
-const expr_port = process.env.EXPRESS_PORT
-const uri = process.env.MONGODB_URI
-const db = process.env.DB
-const users = 'users'
-const messages = 'messages'
+const HTTP_PORT = process.env.HTTP_PORT
+const EXPRESS_PORT = process.env.EXPRESS_PORT
+const URI = process.env.MONGODB_URI
+const DB = process.env.DB
+const USERS = 'users'
+const MESSAGES = 'messages'
 
 const app = express()
 app.use(cors())
@@ -33,11 +33,10 @@ async function run() {
     }
   }
 }
-if (uri) {
-  client = new MongoClient(uri)
+if (URI) {
+  client = new MongoClient(URI)
   run()
 }
-
 
 io.on('connection', (socket) => {
   console.log(socket.id)
@@ -45,9 +44,9 @@ io.on('connection', (socket) => {
   socket.on('private message', async (args: MessageType) => {
     console.log(args)
     const recipientName = args.to
-    const recipientObject = await client.db(db).collection(users).findOne<{username: string, socket_id: string}>({username: recipientName})
+    const recipientObject = await client.db(DB).collection(USERS).findOne<{username: string, socket_id: string}>({username: recipientName})
     if (recipientObject?.socket_id) {
-      await client.db(db).collection('messages').insertOne(args)
+      await client.db(DB).collection(MESSAGES).insertOne(args)
   
       socket.emit('private message', args)
       socket.to(recipientObject?.socket_id).emit('private message', args)
@@ -56,25 +55,25 @@ io.on('connection', (socket) => {
 
   socket.on('set username', async (args: UsernameType) => {
     const { id, username } = args
-    const dbUserEntry = await client.db(db).collection(users).findOne({username})
+    const dbUserEntry = await client.db(DB).collection(USERS).findOne({username})
     console.log(dbUserEntry)
     if (dbUserEntry) {
       socket.emit('username callback', {...args, success: false})
     } else {
-      await client.db(db).collection('users').insertOne({username, socket_id: id})
+      await client.db(DB).collection(USERS).insertOne({username, socket_id: id})
       socket.emit('username callback', {...args, success: true})
     }
   })
 
   socket.on('disconnect', async (reason) => {
-    await client.db(db).collection(users).findOneAndDelete({socket_id: socket.id})
+    await client.db(DB).collection(USERS).findOneAndDelete({socket_id: socket.id})
     console.log(`socket ${socket.id} disconnected`, reason)
   })
 })
 
 app.get('/:collection', async (req, res) => {
   const collection = req.params.collection
-  const resultsCursor = client.db('chatapp').collection(collection).find()
+  const resultsCursor = client.db(DB).collection(collection).find()
   const resultsArr: any[] = []
   await resultsCursor.forEach((result) => {resultsArr.push(result)})
 
@@ -82,7 +81,7 @@ app.get('/:collection', async (req, res) => {
 })
 
 app.get('/messages/:to/:from', async (req, res) => {
-  const collection = 'messages'
+  const collection = MESSAGES
   const {from, to} = req.params
 
   const query: Record<string, any> = {'$and': []}
@@ -91,16 +90,27 @@ app.get('/messages/:to/:from', async (req, res) => {
   sub = {'$or': [{from: to}, {to}]}
   query['$and'].push(sub)
   
-  const resultsCursor = client.db('chatapp').collection(collection).find(query)
+  const resultsCursor = client.db(DB).collection(collection).find(query)
   const resultsArr: any[] = []
   await resultsCursor.forEach(result => {resultsArr.push(result)})
 
   res.status(200).send(resultsArr)
 })
 
-httpServer.listen(http_port)
-app.listen(expr_port, () => {
-  return console.log(`Express app listening on ${expr_port}`)
+app.get('/users/:username/names', async (req, res) => {
+  const { username } = req.params
+  const usersCursor = client.db(DB).collection(USERS).find<{username: string, socket_id: string}>({username})
+  const usersArr: string[] = []
+  await usersCursor.forEach(user => {
+    usersArr.push(user.username)
+  })
+
+  res.send(usersArr)
+})
+
+httpServer.listen(HTTP_PORT)
+app.listen(EXPRESS_PORT, () => {
+  return console.log(`Express app listening on ${EXPRESS_PORT}`)
 })
 
 httpServer.on('close', () => {

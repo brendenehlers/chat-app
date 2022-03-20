@@ -49,11 +49,12 @@ function App(props: Props) {
     setMessages(newMessages)
   } 
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (socket.id != null) {
       const recipientName = recipientRef.current?.value
+      const namesInDB = await (await fetch(`http://localhost:3003/users/${recipientName}/names`)).json()
       const value = messageRef.current?.value
-      if (username && recipientName && value) {
+      if (username && recipientName && value && namesInDB.length) {
         socket.emit('private message', configureMessage(username, recipientName, {value}))
         messageRef.current.value = ''
       }
@@ -69,6 +70,12 @@ function App(props: Props) {
     }
   }
 
+  async function handleRecipientChange() {
+    const value = recipientRef.current?.value
+    const messages = await (await fetch(`http://localhost:3003/messages/${value}/${username}`)).json()
+    setMessages(messages)
+  }
+
   return (
     <div className="App">
       {username ? 
@@ -76,7 +83,7 @@ function App(props: Props) {
           <label>Me: {id || 'waiting for socket id'}</label>
           <label>username: {username || 'waiting for username'}</label> 
           <label>Recipient Username:</label>
-          <input ref={recipientRef} type='text' />
+          <input ref={recipientRef} type='text' onChange={handleRecipientChange} />
           
           <div className='message-container'>
             {messages.map((msg, i) => {
@@ -96,14 +103,16 @@ function App(props: Props) {
           </div>
         </> 
       :
-        <div>
+        <div
+          style={{display: 'flex', flexDirection: 'column'}}
+        >
           <label>enter a username:</label>
           <input type='text' ref={usernameRef} placeholder='username' />
           <button onClick={handleUsername}>Submit</button>
         </div>
       }
     </div>
-  );
+  )
 }
 
 export default App;
