@@ -1,7 +1,7 @@
 import React from 'react'
 
 import './styles.css'
-import {MessageType} from '../../../../global/schema'
+import {MessageType} from '../../../../../global/schema'
 
 type Props = {
     username: string

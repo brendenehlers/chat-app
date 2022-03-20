@@ -1,24 +1,19 @@
 import express from 'express'
-import 'dotenv/config'
+
 import { createServer } from 'http'
 import { Server } from 'socket.io'
 import { MongoClient } from 'mongodb'
 import cors from 'cors'
 
 import { MessageType, UsernameType } from '../../global/schema'
-
-// constants
-const HTTP_PORT = process.env.HTTP_PORT
-const EXPRESS_PORT = process.env.EXPRESS_PORT
-const URI = process.env.MONGODB_URI
-const DB = process.env.DB
-const USERS = 'users'
-const MESSAGES = 'messages'
+import { DB, URI, USERS, MESSAGES, HTTP_PORT, EXPRESS_PORT } from './constants'
+import App from './app'
 
 const app = express()
 app.use(cors())
 const httpServer = createServer(app)
 const io = new Server(httpServer, {cors: {origin: '*'}})
+
 
 let client: MongoClient
 async function run() {
@@ -36,7 +31,9 @@ async function run() {
 if (URI) {
   client = new MongoClient(URI)
   run()
+  App(app, client)
 }
+
 
 io.on('connection', (socket) => {
   console.log(socket.id)
@@ -69,43 +66,6 @@ io.on('connection', (socket) => {
     await client.db(DB).collection(USERS).findOneAndDelete({socket_id: socket.id})
     console.log(`socket ${socket.id} disconnected`, reason)
   })
-})
-
-app.get('/:collection', async (req, res) => {
-  const collection = req.params.collection
-  const resultsCursor = client.db(DB).collection(collection).find()
-  const resultsArr: any[] = []
-  await resultsCursor.forEach((result) => {resultsArr.push(result)})
-
-  res.status(200).send(resultsArr)
-})
-
-app.get('/messages/:to/:from', async (req, res) => {
-  const collection = MESSAGES
-  const {from, to} = req.params
-
-  const query: Record<string, any> = {'$and': []}
-  let sub = {'$or': [{to: from}, {from}]}
-  query['$and'].push(sub)
-  sub = {'$or': [{from: to}, {to}]}
-  query['$and'].push(sub)
-  
-  const resultsCursor = client.db(DB).collection(collection).find(query)
-  const resultsArr: any[] = []
-  await resultsCursor.forEach(result => {resultsArr.push(result)})
-
-  res.status(200).send(resultsArr)
-})
-
-app.get('/users/:username/names', async (req, res) => {
-  const { username } = req.params
-  const usersCursor = client.db(DB).collection(USERS).find<{username: string, socket_id: string}>({username})
-  const usersArr: string[] = []
-  await usersCursor.forEach(user => {
-    usersArr.push(user.username)
-  })
-
-  res.send(usersArr)
 })
 
 httpServer.listen(HTTP_PORT)
